@@ -4,10 +4,15 @@ import com.smarttutor.entity.Quiz;
 import com.smarttutor.entity.Question;
 import com.smarttutor.entity.QuizAttempt;
 import com.smarttutor.entity.Student;
-import com.smarttutor.repository.*;
+import com.smarttutor.repository.QuizRepository;
+import com.smarttutor.repository.QuestionRepository;
+import com.smarttutor.repository.QuizAttemptRepository;
+import com.smarttutor.repository.StudentRepository;
+import com.smarttutor.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -103,5 +108,16 @@ public class QuizService {
     
     public List<QuizAttempt> getStudentQuizAttempts(Long studentId) {
         return quizAttemptRepository.findByStudentId(studentId);
+    }
+    
+    public List<Quiz> getQuizzesByTeacher(Long teacherId) {
+        return quizRepository.findByTeacherId(teacherId);
+    }
+    
+    public List<Quiz> getQuizzesForStudent(Long studentId) {
+        Student student = studentRepository.findById(studentId).orElse(null);
+        if (student == null) return new ArrayList<>();
+        
+        return quizRepository.findByClassIdAndDivisionId(student.getClassEntity().getId(), student.getDivision().getId());
     }
 }

@@ -24,10 +24,6 @@ public class ClassEntity {
 
     @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Teacher> teachers;
-
-    @OneToMany(mappedBy = "classEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<Student> students;
 
     @PrePersist
@@ -73,14 +69,6 @@ public class ClassEntity {
 
     public void setDivisions(List<Division> divisions) {
         this.divisions = divisions;
-    }
-
-    public List<Teacher> getTeachers() {
-        return teachers;
-    }
-
-    public void setTeachers(List<Teacher> teachers) {
-        this.teachers = teachers;
     }
 
     public List<Student> getStudents() {

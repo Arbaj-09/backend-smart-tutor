@@ -21,8 +21,14 @@ public class Student {
     @Column(unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String password;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
@@ -104,6 +110,22 @@ public class Student {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public ClassEntity getClassEntity() {

@@ -1,7 +1,9 @@
 package com.smarttutor.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "divisions")
@@ -17,10 +19,11 @@ public class Division {
     @JoinColumn(name = "class_id", nullable = false)
     private ClassEntity classEntity;
 
-    @OneToMany(mappedBy = "division", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Teacher> teachers;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "division", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Student> students;
 
     // Constructors
@@ -29,6 +32,7 @@ public class Division {
     public Division(String divisionName, ClassEntity classEntity) {
         this.divisionName = divisionName;
         this.classEntity = classEntity;
+        this.createdAt = LocalDateTime.now();
     }
 
     // Getters and Setters
@@ -56,19 +60,19 @@ public class Division {
         this.classEntity = classEntity;
     }
 
-    public List<Teacher> getTeachers() {
-        return teachers;
-    }
-
-    public void setTeachers(List<Teacher> teachers) {
-        this.teachers = teachers;
-    }
-
     public List<Student> getStudents() {
         return students;
     }
 
     public void setStudents(List<Student> students) {
         this.students = students;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

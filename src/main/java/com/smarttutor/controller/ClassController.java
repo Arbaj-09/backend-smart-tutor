@@ -1,7 +1,9 @@
 package com.smarttutor.controller;
 
 import com.smarttutor.entity.ClassEntity;
+import com.smarttutor.dto.response.ClassResponseDTO;
 import com.smarttutor.service.ClassService;
+import com.smarttutor.mapper.ClassMapper;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,36 +20,40 @@ public class ClassController {
     private ClassService classService;
     
     @PostMapping
-    public ResponseEntity<ClassEntity> createClass(@Valid @RequestBody ClassEntity classEntity) {
+    public ResponseEntity<ClassResponseDTO> createClass(@Valid @RequestBody ClassEntity classEntity) {
         try {
             ClassEntity createdClass = classService.createClass(classEntity);
-            return ResponseEntity.ok(createdClass);
+            ClassResponseDTO dto = ClassMapper.toDTO(createdClass);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
     
     @GetMapping
-    public ResponseEntity<List<ClassEntity>> getAllClasses() {
+    public ResponseEntity<List<ClassResponseDTO>> getAllClasses() {
         List<ClassEntity> classes = classService.getAllClasses();
-        return ResponseEntity.ok(classes);
+        List<ClassResponseDTO> dtos = ClassMapper.toDTOList(classes);
+        return ResponseEntity.ok(dtos);
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<ClassEntity> getClassById(@PathVariable Long id) {
+    public ResponseEntity<ClassResponseDTO> getClassById(@PathVariable Long id) {
         try {
             ClassEntity classEntity = classService.getClassById(id);
-            return ResponseEntity.ok(classEntity);
+            ClassResponseDTO dto = ClassMapper.toDTO(classEntity);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<ClassEntity> updateClass(@PathVariable Long id, @Valid @RequestBody ClassEntity classEntity) {
+    public ResponseEntity<ClassResponseDTO> updateClass(@PathVariable Long id, @Valid @RequestBody ClassEntity classEntity) {
         try {
             ClassEntity updatedClass = classService.updateClass(id, classEntity);
-            return ResponseEntity.ok(updatedClass);
+            ClassResponseDTO dto = ClassMapper.toDTO(updatedClass);
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }

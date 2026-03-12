@@ -105,4 +105,16 @@ public class QuizController {
         List<QuizAttempt> attempts = quizService.getStudentQuizAttempts(studentId);
         return ResponseEntity.ok(attempts);
     }
+    
+    @GetMapping("/teacher/{teacherId}")
+    public ResponseEntity<List<Quiz>> getQuizzesByTeacher(@PathVariable Long teacherId) {
+        List<Quiz> quizzes = quizService.getQuizzesByTeacher(teacherId);
+        return ResponseEntity.ok(quizzes);
+    }
+    
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<List<Quiz>> getQuizzesForStudent(@PathVariable Long studentId) {
+        List<Quiz> quizzes = quizService.getQuizzesForStudent(studentId);
+        return ResponseEntity.ok(quizzes);
+    }
 }

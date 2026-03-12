@@ -17,6 +17,8 @@ public class StudentDTO {
     
     private String password;
     
+    private String phone;
+    
     private Long classId;
     private Long divisionId;
     private String className;
@@ -70,6 +72,14 @@ public class StudentDTO {
     
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public String getPhone() {
+        return phone;
+    }
+    
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
     
     public Long getClassId() {

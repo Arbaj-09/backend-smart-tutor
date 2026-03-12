@@ -9,13 +9,11 @@ import com.smarttutor.repository.TeacherRepository;
 import com.smarttutor.repository.StudentRepository;
 import com.smarttutor.repository.AttendanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
 
 @Service
 public class HodService {
@@ -35,13 +33,16 @@ public class HodService {
     @Autowired
     private AttendanceRepository attendanceRepository;
     
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
     public Hod createHod(Hod hod) {
         if (hodRepository.existsByEmail(hod.getEmail())) {
             throw new IllegalArgumentException("HOD with email " + hod.getEmail() + " already exists");
         }
         
         // Hash password
-        hod.setPassword(hashPassword(hod.getPassword()));
+        hod.setPassword(passwordEncoder.encode(hod.getPassword()));
         
         return hodRepository.save(hod);
     }
@@ -72,22 +73,14 @@ public class HodService {
         return stats;
     }
 
-    // Simple password hashing (SHA-256)
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
+    public Hod updateHod(Long id, Hod hod) {
+        Hod existingHod = getHodById(id);
+        
+        existingHod.setName(hod.getName());
+        existingHod.setEmail(hod.getEmail());
+        existingHod.setActive(hod.getActive());
+        existingHod.setFcmToken(hod.getFcmToken());
+        
+        return hodRepository.save(existingHod);
     }
 }

@@ -36,4 +36,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     @Query("SELECT COALESCE(SUM(CASE WHEN a.status = 'PRESENT' THEN 1 ELSE 0 END) * 100.0 / COUNT(a), 0) " +
            "FROM Attendance a WHERE a.attendanceDate BETWEEN :startDate AND :endDate")
     Double getOverallAttendancePercentage(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    
+    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.status = :status")
+    Long countByStatus(@Param("status") String status);
 }

@@ -3,17 +3,18 @@ package com.smarttutor.service;
 import com.smarttutor.entity.Teacher;
 import com.smarttutor.entity.ClassEntity;
 import com.smarttutor.entity.Division;
+import com.smarttutor.entity.TeacherClassDivision;
 import com.smarttutor.exception.ResourceNotFoundException;
 import com.smarttutor.repository.TeacherRepository;
 import com.smarttutor.repository.ClassRepository;
 import com.smarttutor.repository.DivisionRepository;
+import com.smarttutor.repository.TeacherClassDivisionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
 
 @Service
 public class TeacherService {
@@ -27,37 +28,33 @@ public class TeacherService {
     @Autowired
     private DivisionRepository divisionRepository;
     
+    @Autowired
+    private TeacherClassDivisionRepository teacherClassDivisionRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
     public Teacher createTeacher(Teacher teacher) {
         if (teacherRepository.existsByEmail(teacher.getEmail())) {
             throw new IllegalArgumentException("Teacher with email " + teacher.getEmail() + " already exists");
         }
         
-        // Validate class and division if provided
-        if (teacher.getClassEntity() != null) {
-            ClassEntity classEntity = classRepository.findById(teacher.getClassEntity().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Class", "id", teacher.getClassEntity().getId()));
-            teacher.setClassEntity(classEntity);
-        }
-        
-        if (teacher.getDivision() != null) {
-            Division division = divisionRepository.findById(teacher.getDivision().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Division", "id", teacher.getDivision().getId()));
-            teacher.setDivision(division);
-        }
-        
         // Hash password
-        teacher.setPassword(hashPassword(teacher.getPassword()));
+        teacher.setPassword(passwordEncoder.encode(teacher.getPassword()));
+        
+        // Set created timestamp
+        teacher.setCreatedAt(LocalDateTime.now());
         
         return teacherRepository.save(teacher);
     }
     
     public Teacher getTeacherById(Long id) {
-        return teacherRepository.findById(id)
+        return teacherRepository.findByIdWithAssignments(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher", "id", id));
     }
     
     public List<Teacher> getAllTeachers() {
-        return teacherRepository.findAll();
+        return teacherRepository.findAllWithAssignments();
     }
     
     public Teacher updateTeacher(Long id, Teacher teacher) {
@@ -65,24 +62,14 @@ public class TeacherService {
         
         existingTeacher.setName(teacher.getName());
         existingTeacher.setEmail(teacher.getEmail());
-        existingTeacher.setActive(teacher.getActive());
-        
-        // Update class and division if provided
-        if (teacher.getClassEntity() != null) {
-            ClassEntity classEntity = classRepository.findById(teacher.getClassEntity().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Class", "id", teacher.getClassEntity().getId()));
-            existingTeacher.setClassEntity(classEntity);
-        }
-        
-        if (teacher.getDivision() != null) {
-            Division division = divisionRepository.findById(teacher.getDivision().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Division", "id", teacher.getDivision().getId()));
-            existingTeacher.setDivision(division);
-        }
+        existingTeacher.setPhone(teacher.getPhone());
+        existingTeacher.setSubject(teacher.getSubject());
+        existingTeacher.setActive(teacher.getActive() != null ? teacher.getActive() : true);
+        existingTeacher.setFcmToken(teacher.getFcmToken());
         
         // Update password if provided
         if (teacher.getPassword() != null && !teacher.getPassword().trim().isEmpty()) {
-            existingTeacher.setPassword(hashPassword(teacher.getPassword()));
+            existingTeacher.setPassword(passwordEncoder.encode(teacher.getPassword()));
         }
         
         return teacherRepository.save(existingTeacher);
@@ -93,31 +80,16 @@ public class TeacherService {
         teacherRepository.delete(teacher);
     }
     
-    public Teacher getTeacherByClassAndDivision(Long classId, Long divisionId) {
-        return teacherRepository.findActiveTeacherByClassAndDivision(classId, divisionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", "class and division", classId + "," + divisionId));
+    public void clearTeacherAssignments(Long teacherId) {
+        List<TeacherClassDivision> assignments = teacherClassDivisionRepository.findByTeacherId(teacherId);
+        teacherClassDivisionRepository.deleteAll(assignments);
     }
     
-    public List<Teacher> getTeachersByClass(Long classId) {
-        return teacherRepository.findByClassEntityId(classId);
-    }
-
-    // Simple password hashing (SHA-256)
-    private String hashPassword(String password) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
-        }
+    public void assignTeacherToClassDivision(Teacher teacher, ClassEntity classEntity, Division division) {
+        TeacherClassDivision assignment = new TeacherClassDivision();
+        assignment.setTeacher(teacher);
+        assignment.setClassEntity(classEntity);
+        assignment.setDivision(division);
+        teacherClassDivisionRepository.save(assignment);
     }
 }

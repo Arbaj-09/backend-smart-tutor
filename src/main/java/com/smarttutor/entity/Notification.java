@@ -24,6 +24,18 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    @Column(name = "teacher_name")
+    private String teacherName;
+
+    @Column(name = "subject")
+    private String subject;
+
+    @Column(name = "class_name")
+    private String className;
+
+    @Column(name = "division_name")
+    private String divisionName;
+
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
@@ -84,6 +96,38 @@ public class Notification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getTeacherName() {
+        return teacherName;
+    }
+
+    public void setTeacherName(String teacherName) {
+        this.teacherName = teacherName;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getDivisionName() {
+        return divisionName;
+    }
+
+    public void setDivisionName(String divisionName) {
+        this.divisionName = divisionName;
     }
 
     public Boolean getIsRead() {

@@ -47,4 +47,11 @@ public class ActivityLogService {
     public List<ActivityLog> getActivityLogsByRoleAndDateRange(Role role, LocalDateTime startDate, LocalDateTime endDate) {
         return activityLogRepository.findByUserRoleAndDateRange(role, startDate, endDate);
     }
+    
+    public List<ActivityLog> getRecentActivitiesByUser(Role role, Long userId, int limit) {
+        return activityLogRepository.findByUserRoleAndUserId(role, userId)
+                .stream()
+                .limit(limit)
+                .toList();
+    }
 }

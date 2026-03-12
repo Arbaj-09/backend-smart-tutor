@@ -34,12 +34,12 @@ public class DivisionService {
     }
     
     public Division getDivisionById(Long id) {
-        return divisionRepository.findById(id)
+        return divisionRepository.findByIdWithClass(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Division", "id", id));
     }
     
     public List<Division> getAllDivisions() {
-        return divisionRepository.findAll();
+        return divisionRepository.findAllWithClass();
     }
     
     public List<Division> getDivisionsByClass(Long classId) {

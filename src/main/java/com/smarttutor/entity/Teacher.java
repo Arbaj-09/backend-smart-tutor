@@ -18,22 +18,27 @@ public class Teacher {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String password;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "class_id")
-    private ClassEntity classEntity;
+    @Column(name = "phone")
+    private String phone;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "division_id")
-    private Division division;
-
-    @Column(nullable = false)
-    private Boolean active = true;
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "subject")
+    private String subject;
+
+    @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<TeacherClassDivision> assignments = new java.util.ArrayList<>();
+
+    @Column(nullable = false)
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
@@ -98,28 +103,28 @@ public class Teacher {
         this.password = password;
     }
 
-    public ClassEntity getClassEntity() {
-        return classEntity;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setClassEntity(ClassEntity classEntity) {
-        this.classEntity = classEntity;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
-    public Division getDivision() {
-        return division;
+    public String getFcmToken() {
+        return fcmToken;
     }
 
-    public void setDivision(Division division) {
-        this.division = division;
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
-    public Boolean getActive() {
-        return active;
+    public String getSubject() {
+        return subject;
     }
 
-    public void setActive(Boolean active) {
-        this.active = active;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -128,6 +133,34 @@ public class Teacher {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    // Remove old class/division getters/setters - replaced by assignments
+
+    public List<TeacherClassDivision> getAssignments() {
+        return assignments;
+    }
+
+    public void setAssignments(List<TeacherClassDivision> assignments) {
+        this.assignments = assignments;
+    }
+
+    public void addAssignment(TeacherClassDivision assignment) {
+        this.assignments.add(assignment);
+        assignment.setTeacher(this);
+    }
+
+    public void removeAssignment(TeacherClassDivision assignment) {
+        this.assignments.remove(assignment);
+        assignment.setTeacher(null);
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 
     public List<Student> getStudents() {

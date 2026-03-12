@@ -14,13 +14,11 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     Optional<Teacher> findByEmail(String email);
     boolean existsByEmail(String email);
     
-    @Query("SELECT t FROM Teacher t WHERE t.classEntity.id = :classId AND t.division.id = :divisionId")
-    List<Teacher> findByClassAndDivision(@Param("classId") Long classId, @Param("divisionId") Long divisionId);
+    @Query("SELECT t FROM Teacher t LEFT JOIN FETCH t.assignments a LEFT JOIN FETCH a.classEntity LEFT JOIN FETCH a.division")
+    List<Teacher> findAllWithAssignments();
     
-    @Query("SELECT t FROM Teacher t WHERE t.classEntity.id = :classId AND t.division.id = :divisionId AND t.active = true")
-    Optional<Teacher> findActiveTeacherByClassAndDivision(@Param("classId") Long classId, @Param("divisionId") Long divisionId);
+    @Query("SELECT t FROM Teacher t LEFT JOIN FETCH t.assignments a LEFT JOIN FETCH a.classEntity LEFT JOIN FETCH a.division WHERE t.id = :id")
+    Optional<Teacher> findByIdWithAssignments(@Param("id") Long id);
     
-    List<Teacher> findByClassEntityId(Long classId);
-    List<Teacher> findByDivisionId(Long divisionId);
     List<Teacher> findByActive(Boolean active);
 }

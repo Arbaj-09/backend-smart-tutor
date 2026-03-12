@@ -2,15 +2,17 @@ package com.smarttutor.controller;
 
 import com.smarttutor.dto.LoginRequestDTO;
 import com.smarttutor.entity.Hod;
+import com.smarttutor.entity.Teacher;
+import com.smarttutor.entity.Student;
 import com.smarttutor.repository.HodRepository;
+import com.smarttutor.repository.TeacherRepository;
+import com.smarttutor.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/auth")
@@ -19,6 +21,15 @@ public class AuthController {
 
     @Autowired
     private HodRepository hodRepository;
+    
+    @Autowired
+    private TeacherRepository teacherRepository;
+    
+    @Autowired
+    private StudentRepository studentRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // ✅ TEST API
     @GetMapping("/test")
@@ -33,44 +44,82 @@ public class AuthController {
             return ResponseEntity.badRequest().body("HOD already exists");
         }
 
-        hod.setPassword(hashPassword(hod.getPassword()));
+        hod.setPassword(passwordEncoder.encode(hod.getPassword()));
         hod.setActive(true);
         Hod saved = hodRepository.save(hod);
         return ResponseEntity.ok(saved);
     }
 
-    // ✅ SIMPLE LOGIN - NO SESSION, NO SECURITY
+    // ✅ AUTO ROLE DETECTION LOGIN
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String password = request.get("password");
+        
+        if (email == null || password == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email and password are required"));
+        }
+        
         try {
-            String email = request.get("email");
-            String password = request.get("password");
-            String role = request.get("role");
-            
-            // Validate input
-            if (email == null || password == null || role == null) {
-                return ResponseEntity.badRequest().body("Missing required fields");
+            // Check HOD
+            Hod hod = hodRepository.findByEmail(email).orElse(null);
+            if (hod != null) {
+                try {
+                    if (hod.getPassword() != null && passwordEncoder.matches(password, hod.getPassword())) {
+                        return ResponseEntity.ok(Map.of(
+                            "id", hod.getId(),
+                            "name", hod.getName(),
+                            "email", hod.getEmail(),
+                            "role", "HOD"
+                        ));
+                    }
+                } catch (Exception e) {
+                    System.err.println("HOD password matching error: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
             
-            // Find HOD by email
-            Hod hod = hodRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-            // Verify password
-            if (!verifyPassword(password, hod.getPassword())) {
-                throw new RuntimeException("Invalid credentials");
+            // Check Teacher
+            Teacher teacher = teacherRepository.findByEmail(email).orElse(null);
+            if (teacher != null) {
+                try {
+                    if (teacher.getPassword() != null && passwordEncoder.matches(password, teacher.getPassword())) {
+                        return ResponseEntity.ok(Map.of(
+                            "id", teacher.getId(),
+                            "name", teacher.getName(),
+                            "email", teacher.getEmail(),
+                            "role", "TEACHER"
+                        ));
+                    }
+                } catch (Exception e) {
+                    System.err.println("Teacher password matching error: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
-
-            // ✅ RETURN USER DATA ONLY - NO SESSION, NO TOKEN
-            return ResponseEntity.ok(Map.of(
-                    "id", hod.getId(),
-                    "name", hod.getName(),
-                    "email", hod.getEmail(),
-                    "role", "HOD"
-            ));
-
+            
+            // Check Student
+            Student student = studentRepository.findByEmail(email).orElse(null);
+            if (student != null) {
+                try {
+                    if (student.getPassword() != null && passwordEncoder.matches(password, student.getPassword())) {
+                        return ResponseEntity.ok(Map.of(
+                            "id", student.getId(),
+                            "name", student.getName(),
+                            "email", student.getEmail(),
+                            "role", "STUDENT"
+                        ));
+                    }
+                } catch (Exception e) {
+                    System.err.println("Student password matching error: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+            
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid email or password"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Invalid credentials");
+            System.err.println("Login exception: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Internal server error: " + e.getMessage()));
         }
     }
 
@@ -80,27 +129,55 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Logout successful"));
     }
 
-    // Simple password hashing (SHA-256)
-    private String hashPassword(String password) {
+    // ✅ RESET TEACHER PASSWORD
+    @PostMapping("/reset-teacher-password")
+    public ResponseEntity<?> resetTeacherPassword(@RequestBody Map<String, String> request) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
+            String email = request.get("email");
+            String newPassword = request.get("password");
+            
+            Teacher teacher = teacherRepository.findByEmail(email).orElse(null);
+            if (teacher == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Teacher not found"));
             }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Error hashing password", e);
+            
+            teacher.setPassword(passwordEncoder.encode(newPassword));
+            teacherRepository.save(teacher);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Password reset successfully",
+                "email", email,
+                "newPassword", newPassword
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // Simple password verification
-    private boolean verifyPassword(String rawPassword, String hashedPassword) {
-        return hashPassword(rawPassword).equals(hashedPassword);
+    // ✅ CREATE TEST TEACHER WITH KNOWN PASSWORD
+    @PostMapping("/create-test-teacher")
+    public ResponseEntity<?> createTestTeacher() {
+        try {
+            Teacher teacher = new Teacher();
+            teacher.setName("Test Teacher");
+            teacher.setEmail("teacher@smarttutor.com");
+            teacher.setPassword("teacher123"); // This will be encoded
+            teacher.setPhone("1234567890");
+            teacher.setActive(true);
+            teacher.setCreatedAt(java.time.LocalDateTime.now());
+            
+            teacher.setPassword(passwordEncoder.encode(teacher.getPassword()));
+            Teacher saved = teacherRepository.save(teacher);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Test teacher created successfully",
+                "email", "teacher@smarttutor.com",
+                "password", "teacher123"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
+
+
 }
